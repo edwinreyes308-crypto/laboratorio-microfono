@@ -1,26 +1,23 @@
-
 import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Laboratorio Web de Voz", page_icon="🎤")
 
-st.title("🎤 Laboratorio de Voz: ¡Conexión Exitosa!")
-st.write("Esta versión tiene seguridad HTTPS activa.")
+st.title("🎤 Prueba de Voz: Conexión Final")
+st.write("Estado: Conexión segura HTTPS activa.")
 
-# Selector de idioma
-idioma = st.radio("Idioma para la prueba:", ["en-US", "es-ES"], horizontal=True)
+idioma = st.radio("Selecciona idioma:", ["en-US", "es-ES"], horizontal=True)
 
-def mic_web_cloud(lang):
-    # JavaScript optimizado para Streamlit Cloud
+def mic_componente(lang):
+    # JavaScript con envío forzado de datos
     js_code = f"""
     <div style="text-align:center;">
         <button id="btn" style="
-            width:100%; height:100px; font-weight:900; 
+            width:100%; height:90px; font-weight:900; 
             background-color:#FFD600; border:4px solid #000; 
-            border-radius:20px; cursor:pointer; font-size:22px;
-            box-shadow: 0px 5px 0px #000;
+            border-radius:20px; cursor:pointer; font-size:20px;
         ">MANTÉN PULSADO Y HABLA</button>
-        <p id="info" style="font-family:sans-serif; font-size:14px; margin-top:10px; color:#555;">Listo</p>
+        <p id="info" style="font-family:sans-serif; font-size:14px; margin-top:10px; color:blue;">Listo</p>
     </div>
 
     <script>
@@ -28,75 +25,54 @@ def mic_web_cloud(lang):
     const info = document.getElementById('info');
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!Recognition) {{
-        info.innerText = "Error: Navegador no compatible";
-    }} else {{
+    if (Recognition) {{
         const rec = new Recognition();
         rec.lang = '{lang}';
         rec.continuous = false;
         rec.interimResults = false;
 
         btn.onmousedown = () => {{
-            try {{
-                rec.start();
-                btn.style.backgroundColor = '#FF5252';
-                btn.innerText = '🔴 ESCUCHANDO...';
-                info.innerText = "Suelte el botón al terminar de hablar";
-            }} catch(e) {{ info.innerText = "Error: " + e.message; }}
+            rec.start();
+            btn.style.backgroundColor = '#FF5252';
+            info.innerText = "Escuchando...";
         }};
 
         btn.onmouseup = () => {{
             rec.stop();
             btn.style.backgroundColor = '#FFD600';
-            btn.innerText = 'MANTÉN PULSADO Y HABLA';
-            info.innerText = "Procesando audio...";
+            info.innerText = "Enviando datos...";
         }};
-
-        // Soporte para móviles
-        btn.ontouchstart = (e) => {{ e.preventDefault(); btn.onmousedown(); }};
-        btn.ontouchend = (e) => {{ e.preventDefault(); btn.onmouseup(); }};
 
         rec.onresult = (event) => {{
             const result = event.results[0][0].transcript;
-            info.innerText = "¡Capturado!";
-            // Enviamos el resultado a Streamlit
+            info.innerText = "¡Enviado!";
+            
+            // EL TRUCO: Enviamos el valor y notificamos a Streamlit que hubo un cambio
             window.parent.postMessage({{
                 type: 'streamlit:setComponentValue',
                 value: result
             }}, '*');
         }};
-
-        rec.onerror = (e) => {{
-            info.innerText = "Error: " + e.error;
-            btn.style.backgroundColor = '#FFD600';
-            btn.innerText = 'MANTÉN PULSADO Y HABLA';
-        }};
+        
+        rec.onerror = (e) => {{ info.innerText = "Error: " + e.error; }};
     }}
     </script>
     """
-    return components.html(js_code, height=180)
+    # Usamos una key única para que Streamlit refresque el componente
+    return components.html(js_code, height=170, key="micro_web")
 
-# --- CAPTURA DE RESULTADO ---
-
-# Llamamos al componente y guardamos el resultado
-resultado_voz = mic_web_cloud(idioma)
+# Captura del resultado
+resultado = mic_componente(idioma)
 
 st.markdown("---")
 
-# Usamos un contenedor vacío para que el resultado aparezca de inmediato
-placeholder = st.empty()
-
-if isinstance(resultado_voz, str) and resultado_voz.strip() != "":
-    # Mostramos globos para celebrar que funcionó
+# Lógica de visualización inmediata
+if resultado:
     st.balloons()
-    placeholder.success(f"### 🎯 Dijiste: **{resultado_voz}**")
-    st.session_state['ultima_palabra'] = resultado_voz
+    st.success(f"### ✅ Se detectó la palabra: **{resultado}**")
+    st.session_state['voz_capturada'] = resultado
 else:
-    placeholder.info("La palabra aparecerá aquí en cuanto termines de hablar.")
+    st.info("Mantén presionado el botón, habla claro y suéltalo para ver el resultado.")
 
-# Cuadro de confirmación
-st.text_input("Palabra capturada por el sistema:", value=st.session_state.get('ultima_palabra', ""))
-
-if st.button("Limpiar pantalla"):
-    st.session_state['ultima_palabra'] = ""
-    st.rerun()
+# Caja de confirmación
+st.text_input("Texto recibido en Python:", value=st.session_state.get('voz_capturada', ""))   
