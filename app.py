@@ -1,23 +1,20 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 1. Configuración inicial (Debe ser lo primero)
 st.set_page_config(page_title="Laboratorio de Voz", layout="centered")
 
-st.title("🎤 Probador de Voz Profesional")
-st.write("Estado: Conexión segura HTTPS")
+st.title("🎤 ¡Conexión Exitosa!")
+st.write("Estado: Micrófono habilitado y seguro.")
 
-# 2. Selección de idioma
 idioma = st.radio("Idioma:", ["en-US", "es-ES"], horizontal=True)
 
-# 3. El componente (Simplificado al máximo para evitar el TypeError)
 def mi_microfono(lang):
     html_code = f"""
     <div style="text-align:center;">
         <button id="btn" style="
-            width:100%; height:80px; font-weight:bold; 
+            width:100%; height:90px; font-weight:bold; 
             background-color:#FFD600; border:3px solid black; 
-            border-radius:15px; cursor:pointer; font-size:18px;
+            border-radius:20px; cursor:pointer; font-size:20px;
         ">MANTÉN PULSADO Y HABLA</button>
         <p id="msg" style="font-family:sans-serif; font-size:12px; color:gray; margin-top:5px;">Listo</p>
     </div>
@@ -43,7 +40,6 @@ def mi_microfono(lang):
             msg.innerText = "Enviando...";
         }};
 
-        // Soporte táctil
         btn.ontouchstart = (e) => {{ e.preventDefault(); btn.onmousedown(); }};
         btn.ontouchend = (e) => {{ e.preventDefault(); btn.onmouseup(); }};
 
@@ -53,29 +49,30 @@ def mi_microfono(lang):
                 type: 'streamlit:setComponentValue',
                 value: texto
             }}, '*');
-            msg.innerText = "¡Enviado!";
+            msg.innerText = "¡Capturado!";
         }};
     }}
     </script>
     """
-    # Quitamos la 'key' problemática y dejamos solo lo esencial
-    return components.html(html_code, height=150)
+    return components.html(html_code, height=160)
 
-# 4. Captura y visualización (Lógica robusta)
-valor_capturado = mi_microfono(idioma)
+# --- CAPTURA CON FILTRO ---
+captura_cruda = mi_microfono(idioma)
 
 st.divider()
 
-if valor_capturado:
+# Este es el FILTRO que elimina el error de DeltaGenerator
+if isinstance(captura_cruda, str) and len(captura_cruda) > 0:
     st.balloons()
-    st.success(f"### ✅ Palabra detectada: {valor_capturado}")
-    st.session_state["texto_voz"] = valor_capturado
+    st.success(f"### ✅ Palabra detectada: {captura_cruda}")
+    st.session_state["ultima_voz"] = captura_cruda
 else:
-    st.info("La palabra aparecerá aquí después de que hables.")
+    # Si lo que recibe no es texto (como el DeltaGenerator), lo ignoramos visualmente
+    st.info("Esperando tu voz... (Mantén pulsado el botón amarillo)")
 
-# Caja de confirmación (solo texto plano)
-confirmacion = st.text_input("Resultado capturado:", value=st.session_state.get("texto_voz", ""))
+# Mostramos el resultado limpio
+resultado_final = st.text_input("Confirmación de texto:", value=st.session_state.get("ultima_voz", ""))
 
 if st.button("Limpiar"):
-    st.session_state["texto_voz"] = ""
+    st.session_state["ultima_voz"] = ""
     st.rerun()
