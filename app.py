@@ -100,16 +100,3 @@ st.text_input("Palabra capturada por el sistema:", value=st.session_state.get('u
 if st.button("Limpiar pantalla"):
     st.session_state['ultima_palabra'] = ""
     st.rerun()
-¿Por qué se quedaba en "Procesando"?
-En la web, a veces el componente HTML envía la palabra pero Streamlit no se entera de que tiene que volver a dibujar la pantalla. En este nuevo código:
-
-He simplificado la lógica de envío.
-
-He añadido un st.empty() que ayuda a que el mensaje de éxito aparezca con más fuerza.
-
-He añadido st.balloons() para que, en cuanto el servidor reciba la palabra, veas globos volando en tu pantalla. ¡Será la señal de victoria!
-
-Prueba esto:
-Actualiza el archivo en GitHub, espera a que Streamlit Cloud diga que terminó de cargar (el círculo de abajo a la derecha dejará de girar) y haz la prueba.
-
-Si hablas fuerte y claro, y el navegador ya te dio permiso, ¡deberías ver los globos y tu palabra en negrita! Cuéntame si por fin lograste ver el resultado.
