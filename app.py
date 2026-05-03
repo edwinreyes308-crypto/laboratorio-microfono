@@ -3,11 +3,13 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Laboratorio de Voz", layout="centered")
 
-st.title("🎤 ¡Conexión Exitosa!")
-st.write("Estado: Micrófono habilitado y seguro.")
+st.title("🎤 Prueba de Voz: Paso Final")
+st.write("Estado: Conexión HTTPS segura.")
 
+# 1. Selección de idioma
 idioma = st.radio("Idioma:", ["en-US", "es-ES"], horizontal=True)
 
+# 2. El Componente con "Notificador de Cambio"
 def mi_microfono(lang):
     html_code = f"""
     <div style="text-align:center;">
@@ -27,11 +29,15 @@ def mi_microfono(lang):
     if (Recognition) {{
         const rec = new Recognition();
         rec.lang = '{lang}';
+        rec.continuous = false;
+        rec.interimResults = false;
         
         btn.onmousedown = () => {{
-            rec.start();
-            btn.style.background = '#FF5252';
-            msg.innerText = "Escuchando...";
+            try {{
+                rec.start();
+                btn.style.background = '#FF5252';
+                msg.innerText = "Escuchando...";
+            }} catch(e) {{ console.log(e); }}
         }};
 
         btn.onmouseup = () => {{
@@ -40,39 +46,43 @@ def mi_microfono(lang):
             msg.innerText = "Enviando...";
         }};
 
+        // Soporte para móviles
         btn.ontouchstart = (e) => {{ e.preventDefault(); btn.onmousedown(); }};
         btn.ontouchend = (e) => {{ e.preventDefault(); btn.onmouseup(); }};
 
         rec.onresult = (event) => {{
             const texto = event.results[0][0].transcript;
+            msg.innerText = "¡Capturado!";
+            
+            // Enviamos el valor a Python
             window.parent.postMessage({{
                 type: 'streamlit:setComponentValue',
                 value: texto
             }}, '*');
-            msg.innerText = "¡Capturado!";
         }};
     }}
     </script>
     """
-    return components.html(html_code, height=160)
+    # Usamos una key dinámica basada en el idioma para forzar el refresco
+    return components.html(html_code, height=160, key=f"micro_{lang}")
 
-# --- CAPTURA CON FILTRO ---
-captura_cruda = mi_microfono(idioma)
+# --- CAPTURA ---
+captura_voz = mi_microfono(idioma)
 
 st.divider()
 
-# Este es el FILTRO que elimina el error de DeltaGenerator
-if isinstance(captura_cruda, str) and len(captura_cruda) > 0:
+# TRUCO: Si la captura es un objeto DeltaGenerator, la ignoramos.
+# Solo actuamos si es un String (texto).
+if isinstance(captura_voz, str) and len(captura_voz) > 0:
     st.balloons()
-    st.success(f"### ✅ Palabra detectada: {captura_cruda}")
-    st.session_state["ultima_voz"] = captura_cruda
+    st.success(f"### ✅ Palabra detectada: **{captura_voz}**")
+    st.session_state["texto_final"] = captura_voz
 else:
-    # Si lo que recibe no es texto (como el DeltaGenerator), lo ignoramos visualmente
-    st.info("Esperando tu voz... (Mantén pulsado el botón amarillo)")
+    st.info("Mantén pulsado, habla claro y suelta para ver el resultado.")
 
-# Mostramos el resultado limpio
-resultado_final = st.text_input("Confirmación de texto:", value=st.session_state.get("ultima_voz", ""))
+# Cuadro donde aparecerá la palabra grabada
+st.text_input("Texto recibido en el sistema:", value=st.session_state.get("texto_final", ""))
 
-if st.button("Limpiar"):
-    st.session_state["ultima_voz"] = ""
+if st.button("Limpiar todo"):
+    st.session_state["texto_final"] = ""
     st.rerun()
