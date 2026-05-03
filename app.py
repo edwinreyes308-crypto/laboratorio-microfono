@@ -59,4 +59,3 @@ if isinstance(resultado, str) and resultado.strip() != "":
     st.session_state['voz'] = resultado
 
 st.text_input("Resultado final:", value=st.session_state.get('voz', ""))
-Paso
