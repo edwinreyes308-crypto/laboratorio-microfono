@@ -1,88 +1,48 @@
 import streamlit as st
-import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Laboratorio de Voz", layout="centered")
+# Configuración de la página
+st.set_page_config(page_title="Diccionario Pedagógico de Voz", layout="centered")
 
-st.title("🎤 Prueba de Voz: Paso Final")
-st.write("Estado: Conexión HTTPS segura.")
+st.title("🎤 Laboratorio de Voz: Versión Profesional")
+st.write("Estado: Conexión segura HTTPS activa.")
 
-# 1. Selección de idioma
-idioma = st.radio("Idioma:", ["en-US", "es-ES"], horizontal=True)
-
-# 2. El Componente con "Notificador de Cambio"
-def mi_microfono(lang):
-    html_code = f"""
-    <div style="text-align:center;">
-        <button id="btn" style="
-            width:100%; height:90px; font-weight:bold; 
-            background-color:#FFD600; border:3px solid black; 
-            border-radius:20px; cursor:pointer; font-size:20px;
-        ">MANTÉN PULSADO Y HABLA</button>
-        <p id="msg" style="font-family:sans-serif; font-size:12px; color:gray; margin-top:5px;">Listo</p>
-    </div>
-
-    <script>
-    const btn = document.getElementById('btn');
-    const msg = document.getElementById('msg');
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (Recognition) {{
-        const rec = new Recognition();
-        rec.lang = '{lang}';
-        rec.continuous = false;
-        rec.interimResults = false;
-        
-        btn.onmousedown = () => {{
-            try {{
-                rec.start();
-                btn.style.background = '#FF5252';
-                msg.innerText = "Escuchando...";
-            }} catch(e) {{ console.log(e); }}
-        }};
-
-        btn.onmouseup = () => {{
-            rec.stop();
-            btn.style.background = '#FFD600';
-            msg.innerText = "Enviando...";
-        }};
-
-        // Soporte para móviles
-        btn.ontouchstart = (e) => {{ e.preventDefault(); btn.onmousedown(); }};
-        btn.ontouchend = (e) => {{ e.preventDefault(); btn.onmouseup(); }};
-
-        rec.onresult = (event) => {{
-            const texto = event.results[0][0].transcript;
-            msg.innerText = "¡Capturado!";
-            
-            // Enviamos el valor a Python
-            window.parent.postMessage({{
-                type: 'streamlit:setComponentValue',
-                value: texto
-            }}, '*');
-        }};
-    }}
-    </script>
-    """
-    # Usamos una key dinámica basada en el idioma para forzar el refresco
-    return components.html(html_code, height=160, key=f"micro_{lang}")
-
-# --- CAPTURA ---
-captura_voz = mi_microfono(idioma)
+# --- SECCIÓN DE IDIOMA ---
+col1, col2 = st.columns(2)
+with col1:
+    idioma = st.selectbox("Selecciona el idioma a practicar:", ["Español", "Inglés"])
+with col2:
+    nivel = st.selectbox("Nivel:", ["Primaria", "Secundaria"])
 
 st.divider()
 
-# TRUCO: Si la captura es un objeto DeltaGenerator, la ignoramos.
-# Solo actuamos si es un String (texto).
-if isinstance(captura_voz, str) and len(captura_voz) > 0:
-    st.balloons()
-    st.success(f"### ✅ Palabra detectada: **{captura_voz}**")
-    st.session_state["texto_final"] = captura_voz
+# --- CAPTURA DE AUDIO NATIVA ---
+# Esta herramienta es la que elimina los errores de "Network" y "TypeError"
+st.subheader("Paso 1: Graba tu pronunciación")
+archivo_audio = st.audio_input("Presiona el círculo para grabar tu voz")
+
+if archivo_audio:
+    # 1. Confirmación visual de que el audio llegó al servidor
+    st.success("¡Audio capturado con éxito!")
+    st.audio(archivo_audio)
+    
+    # 2. Espacio para la transcripción
+    st.subheader("Paso 2: Resultado de la transcripción")
+    
+    # Nota técnica: Para convertir este archivo de audio a texto escrito (transcribir),
+    # el siguiente paso es conectar una librería como 'speech_recognition'.
+    # Por ahora, el sistema ya recibe tu voz sin errores.
+    
+    st.info(f"El sistema ha recibido tu voz en {idioma}. "
+            "Estamos listos para procesar la palabra en el diccionario.")
+
 else:
-    st.info("Mantén pulsado, habla claro y suelta para ver el resultado.")
+    st.info("Haz clic en el icono del micrófono arriba para empezar.")
 
-# Cuadro donde aparecerá la palabra grabada
-st.text_input("Texto recibido en el sistema:", value=st.session_state.get("texto_final", ""))
+# --- ÁREA DEL DICCIONARIO (Lógica pedagógica) ---
+st.divider()
+st.subheader("📚 Consulta del Diccionario")
+palabra_manual = st.text_input("O escribe la palabra manualmente aquí:", placeholder="Ej: Polinomios, Fracciones...")
 
-if st.button("Limpiar todo"):
-    st.session_state["texto_final"] = ""
-    st.rerun()
+if palabra_manual:
+    st.write(f"Buscando definición para: **{palabra_manual}**")
+    # Aquí irá tu base de datos de matemáticas e inglés
