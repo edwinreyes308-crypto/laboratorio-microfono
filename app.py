@@ -1,16 +1,17 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
+# Configuración de página
 st.set_page_config(page_title="Laboratorio de Micrófono", layout="centered")
 
 st.title("🎙️ Laboratorio de Entonación")
 st.write("Prueba de captura de voz con seguridad HTTPS")
 
-# --- INTERFAZ ORIGINAL ---
+# 1. Selección de idioma (Tu interfaz original)
 idioma = st.radio("Selecciona el idioma para la prueba:", ["en-US", "es-ES"], horizontal=True)
 
+# 2. Definición del componente (Corregido para evitar TypeError)
 def componente_microfono(lang):
-    # HTML y JS que ya conoces, optimizado para enviar el texto correctamente
     html_code = f"""
     <div style="text-align:center;">
         <button id="btn" style="
@@ -51,7 +52,7 @@ def componente_microfono(lang):
             info.innerText = "Procesando...";
         }};
 
-        // Soporte para móviles (Motorola/Android)
+        // Soporte para móviles
         btn.ontouchstart = (e) => {{ e.preventDefault(); btn.onmousedown(); }};
         btn.ontouchend = (e) => {{ e.preventDefault(); btn.onmouseup(); }};
 
@@ -66,25 +67,23 @@ def componente_microfono(lang):
     }}
     </script>
     """
-    # Usamos una key estática para evitar el TypeError
-    return components.html(html_code, height=180, key="laboratorio_v1")
+    # Cambiamos el orden de los parámetros para máxima compatibilidad
+    return components.html(html=html_code, height=180)
 
-# --- LÓGICA DE CAPTURA ---
-captura = componente_microfono(idioma)
+# 3. Ejecución y Filtro de visualización
+# Usamos una variable temporal para limpiar el DeltaGenerator
+captura_raw = componente_microfono(idioma)
 
 st.divider()
 
-# Filtro para que solo muestre el texto cuando sea una cadena real
-if isinstance(captura, str) and len(captura) > 0:
+# Solo guardamos en el sistema si el valor es realmente un texto
+if isinstance(captura_raw, str) and len(captura_raw) > 0:
+    st.session_state['texto_escuchado'] = captura_raw
     st.balloons()
-    st.success(f"### Palabra escuchada: **{captura}**")
-    st.session_state['texto_escuchado'] = captura
-else:
-    st.info("El resultado aparecerá aquí abajo cuando hables.")
 
-# El cuadro final que querías para ver la palabra escrita
-st.text_input("Resultado en el sistema:", value=st.session_state.get('texto_escuchado', ""))
+# Mostramos el resultado escrito en el cuadro de texto que pediste
+st.text_input("Palabra escuchada por el sistema:", value=st.session_state.get('texto_escuchado', ""))
 
-if st.button("Limpiar laboratorio"):
+if st.button("Limpiar datos"):
     st.session_state['texto_escuchado'] = ""
     st.rerun()
